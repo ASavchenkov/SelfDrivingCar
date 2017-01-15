@@ -104,7 +104,7 @@ void processCommand(String com){
 void loop() {
   // put your main code here, to run repeatedly:
     
-  /*String nextCommand = "";
+  String nextCommand = "";
   if(Serial.available()){
     char letter = Serial.read();
     if(letter == 'q'){
@@ -113,7 +113,7 @@ void loop() {
     } else {
       currentCommand.concat(letter);
     }
-  }*/
+  }
   
-  processCommand("F0");
+  processCommand(newCommand);
 }
