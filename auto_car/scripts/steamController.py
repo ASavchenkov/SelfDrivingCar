@@ -2,6 +2,7 @@
 import rospy
 from std_msgs.msg import String
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import LaserScan
 import time
 
 from steamcontroller import SteamController
@@ -11,18 +12,44 @@ import threading
 import serial
 
 import math
+import numpy as np
 
 globalOdom = 0
 #45 degrees is the center
 globalSteering = 45
 globalMoveCommand = 'n'
 autonomous = False
-ser = serial.Serial('/dev/ttyACM0',9600)
+
+autoSteerCommand = 'c'
+autoDriveCommand = 'n'
 
 def odomCallback(data):
     global globalOdom
     globalOdom = data
 
+def scannerCallback(data):
+    # print data
+    global autoSteerCommand
+    global autoDriveCommand
+    scan = data.ranges
+    averaged = [np.mean(scan[i:i+5]) for i in range(len(scan)-5)]
+    worstDirection = np.argmin(averaged) 
+
+    if(averaged[worstDirection]<3):
+        autoSteerCommand = 'c'
+        autoDriveCommand = 'n'
+    elif(averaged[worstDirection]<5):
+        if(worstDirection<len(averaged)/2): autoSteerCommand = 'l'
+        else: autoSteerCommand = 'r'
+        autoDriveCommand = 'f'
+    else:
+        autoSteerCommand = 'c'
+        autoDriveCommand = 'f'
+    
+    print(autoSteerCommand,autoDriveCommand)
+
+
+    
 
 def int_to_bool_list(num):
     return [bool(num & (1<<n)) for n in range(32)]
@@ -32,12 +59,9 @@ def testSciCallback(_,sci):
     global globalSteering
     global globalMoveCommand
     global autonomous
-    # global ser
-    # print(ser.readline().decode('ascii','replace'))
 
 
     buttons =  int_to_bool_list(sci.buttons)
-    # print(zip(range(32),buttons))
     
     if(buttons[15]):autonomous = True
     else: autonomous = False
@@ -51,7 +75,7 @@ def testSciCallback(_,sci):
     
 
 def scFunc():
-    print('this function is runnig')
+    print('this function is running')
     sc = SteamController(callback=testSciCallback)
     sc.run()
    
@@ -61,9 +85,10 @@ if __name__ == '__main__':
     scThread = threading.Thread(target=scFunc)
     scThread.setDaemon(True)
     scThread.start()
-    print('running the steam controller')
+
     rospy.init_node('robotController',anonymous=True)
-    rospy.Subscriber('/rtabmap/odom',Odometry, odomCallback)
+    # rospy.Subscriber('/rtabmap/odom',Odometry, odomCallback)
+    rospy.Subscriber('/frontScanner/scan',LaserScan,scannerCallback)
     rospy.loginfo('liked and subscribed!')
     
 
@@ -72,7 +97,7 @@ if __name__ == '__main__':
     lastSteering = 45
     lastMoveCommand = 'n'
 
-    waypoint =iter([[0,10],[0,0]]).next()
+    # ser = serial.Serial('/dev/ttyACM0',9600)
 
     while(not rospy.is_shutdown()):
         lastSteering = curSteering
@@ -82,13 +107,10 @@ if __name__ == '__main__':
         # rospy.loginfo('mainloop %s, %f', globalMoveCommand,globalSteering)
         
         if(autonomous):
-            # print(globalOdom.pose.pose.position) 
-            # print(globalOdom.pose.pose.orientation)
-            # print(waypoint)
+            
             pass
-        # if(lastSteering!=curSteering or lastMoveCommand!=curMoveCommand):
         command = curMoveCommand+str(curSteering)
-        ser.write(bytearray(command+ 'q','utf-8'))
+        # ser.write(bytearray(command+ 'q','utf-8'))
          
         time.sleep(1.0/15.0)
         

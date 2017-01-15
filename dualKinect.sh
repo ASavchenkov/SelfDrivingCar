@@ -20,8 +20,11 @@ tmux new -d -s frontScanner 'export ROS_NAMESPACE=/frontScanner; \
 rosrun pointcloud_to_laserscan pointcloud_to_laserscan_node \
 	cloud_in:=/frontCamera/depth_registered/points \
 	_range_min:=0.1 \
-	_range_max:=30 \
-	_target_frame:=frontCamera_link'
+	_range_max:=10 \
+	_target_frame:=frontCamera_link \
+	_angle_min:=-0.50 \
+	_angle_max:=0.50 \
+	_use_inf:=false'
 
 
 #echo "all done"
