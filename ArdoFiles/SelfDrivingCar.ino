@@ -11,7 +11,12 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   Serial.println("Connected.");
+  //digitalWrite(7,LOW);
+  pinMode(leftRelay , OUTPUT);
+  pinMode(rightRelay , OUTPUT);
   motor.attach(motorPin);
+  digitalWrite(leftRelay, HIGH);
+  digitalWrite(rightRelay, HIGH);
 }
 
 
@@ -28,24 +33,24 @@ String driveToString(Drive d){
   }
 }
 int toAngle(int pos){
-  //3.9 to 4.2kO
+  //945-1023
   // 0(0) to 5(1023)
-  int a = 0;
-  int b = 360;
-  return constrain(pos, a, b);
+  int x = (90*(pos-945)/78)-45;
+  return x;
 }
 
 void steerControl(int desiredAngle){
   int currentPos = analogRead(steerPOD);
   int currentAngle = toAngle(currentPos);
-  float pgain = 0.    1;
+  float pgain = 0.06;
   float delta = pgain*(desiredAngle - currentAngle);
   if(delta > 1.0){
     delta = 1;
   } else if (delta < -1){
     delta = -1; 
   }
-  motor.write(delta);
+  motor.write(90*delta+90);
+  Serial.println(90*delta+90);
 }
 
 void driveControl(Drive d){
@@ -97,8 +102,9 @@ void processCommand(String com){
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:  
-  String nextCommand = "";
+  // put your main code here, to run repeatedly:
+    
+  /*String nextCommand = "";
   if(Serial.available()){
     char letter = Serial.read();
     if(letter == 'q'){
@@ -107,6 +113,7 @@ void loop() {
     } else {
       currentCommand.concat(letter);
     }
-  }
-  processCommand(nextCommand);
+  }*/
+  
+  processCommand("F0");
 }
