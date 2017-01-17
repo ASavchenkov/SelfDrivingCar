@@ -65,7 +65,10 @@ def testSciCallback(_,sci):
     
     if(buttons[15]):autonomous = True
     else: autonomous = False
-    globalSteering = int((float(sci.lpad_x)/32768)/2*90)
+    localSteering = int((float(sci.lpad_x)/32768)/2*90)
+    if(localSteering<-30):globalSteering='l'
+    elif(localSteering>30):globalSteering='r'
+    else: globalSteering='c'
     if (sci.rtrig>10 and sci.ltrig>10):
         if(sci.rtrig>sci.ltrig):globalMoveCommand='f'
         else:globalMoveCommand='r'
@@ -94,10 +97,10 @@ if __name__ == '__main__':
 
     curSteering = globalMoveCommand
     curMoveCommand = globalMoveCommand
-    lastSteering = 45
+    lastSteering = 'c'
     lastMoveCommand = 'n'
 
-    # ser = serial.Serial('/dev/ttyACM0',9600)
+    ser = serial.Serial('/dev/ttyACM0',9600)
 
     while(not rospy.is_shutdown()):
         lastSteering = curSteering
@@ -107,10 +110,11 @@ if __name__ == '__main__':
         # rospy.loginfo('mainloop %s, %f', globalMoveCommand,globalSteering)
         
         if(autonomous):
-            
-            pass
+            curMoveCommand = autoDriveCommand
+            curSteering = autoSteerCommand
         command = curMoveCommand+str(curSteering)
-        # ser.write(bytearray(command+ 'q','utf-8'))
+        rospy.loginfo(command)
+        ser.write(bytearray(command+ 'q','utf-8'))
          
         time.sleep(1.0/15.0)
         
